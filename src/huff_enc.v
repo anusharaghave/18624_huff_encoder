@@ -23,12 +23,10 @@ module huff_encoder (
 	reg [8:0] encoded_mask;
 	reg done;
 	reg [2:0] encoded_value_h [0:5];
-	reg [2:0] a;
 	reg [2:0] b;
 	reg [2:0] c;
 	reg [2:0] encoded_value_l;
 	reg [2:0] encoded_value_r;
-	wire is_n_odd;
 	freq_calc freq_calc_ins(
 		.data_in(data_in),
 		.freq_in(freq_in),
@@ -47,7 +45,6 @@ module huff_encoder (
 	always @(posedge clk) begin : huffman_enc
 		if (reset) begin
 			state <= 3'b001;
-			a <= 3'd0;
 			b <= 3'b000;
 			c <= 3'b000;
 			done = 'b0;
@@ -85,7 +82,7 @@ module huff_encoder (
 					done = 'b0;
 					data_in[(2 - c) * 8+:8] <= io_in[7:0];
 					freq_in[(2 - c) * 3+:3] <= io_in[10:8];
-					c <= (io_in[11] ? c + 1'b1 : 'b0);
+					c <= c + 1'b1;
 					state <= (c == 'd2 ? 3'b010 : 3'b001);
 				end
 				3'b010: begin
