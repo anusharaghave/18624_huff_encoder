@@ -6,10 +6,13 @@ module my_chip (
     input logic clock,
     input logic reset // Important: Reset is ACTIVE-HIGH
 );
+
+    huff_encoder DUT(.clk(clock), .reset(reset), .data_in(io_in[7:0]), .freq_in(io_in[11:8]), .encoded_value(io_out[2:0]), .encoded_mask(io_out[5:3]), .done(io_out[6]));  
+    
     
     // Basic counter design as an example
 
-
+/*
     wire [6:0] led_out;
     assign io_out[6:0] = led_out;
 
@@ -43,5 +46,5 @@ module my_chip (
 
     // instantiate segment display
     seg7 seg7(.counter(digit), .segments(led_out));
-
+*/
 endmodule
