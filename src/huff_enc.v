@@ -13,12 +13,12 @@ module huff_encoder (
 	reg [1:0] count;
 	reg [2:0] odd_idx;
 	reg [2:0] even_idx;
-	wire [95:0] initial_node;
+	wire [89:0] initial_node;
 	reg [2:0] state;
 	reg [31:0] huff_tree [0:5];
-	reg [95:0] in_huff_tree;
-	wire [127:0] out_huff_tree;
-	wire [31:0] merged_node;
+	reg [89:0] in_huff_tree;
+	wire [119:0] out_huff_tree;
+	wire [29:0] merged_node;
 	reg [8:0] encoded_value;
 	reg [8:0] encoded_mask;
 	reg done;
@@ -34,12 +34,12 @@ module huff_encoder (
 	);
 	node_sorter node_sorter_ins(
 		.clk(clk),
-		.input_node(in_huff_tree[0+:96]),
-		.output_node(out_huff_tree[32+:96])
+		.input_node(in_huff_tree[0+:90]),
+		.output_node(out_huff_tree[30+:90])
 	);
 	merge_nodes merge_nodes_ins(
-		.min_node(out_huff_tree[96+:32]),
-		.second_min_node(out_huff_tree[64+:32]),
+		.min_node(out_huff_tree[90+:30]),
+		.second_min_node(out_huff_tree[60+:30]),
 		.merged_node(merged_node)
 	);
 	always @(posedge clk) begin : huffman_enc
@@ -54,11 +54,11 @@ module huff_encoder (
 					begin
 						encoded_value[(2 - i) * 3+:3] = 'b0;
 						encoded_mask[(2 - i) * 3+:3] = 'b0;
-						in_huff_tree[((2 - i) * 32) + 31-:9] = 'b0;
-						in_huff_tree[((2 - i) * 32) + 22-:4] = 'b0;
-						in_huff_tree[((2 - i) * 32) + 18] = 'b0;
-						in_huff_tree[((2 - i) * 32) + 17-:9] = 'b0;
-						in_huff_tree[((2 - i) * 32) + 8-:9] = 'b0;
+						in_huff_tree[((2 - i) * 30) + 29-:9] = 'b0;
+						in_huff_tree[((2 - i) * 30) + 20-:2] = 'b0;
+						in_huff_tree[((2 - i) * 30) + 18] = 'b0;
+						in_huff_tree[((2 - i) * 30) + 17-:9] = 'b0;
+						in_huff_tree[((2 - i) * 30) + 8-:9] = 'b0;
 					end
 			end
 			begin : sv2v_autoblock_2
@@ -90,29 +90,29 @@ module huff_encoder (
 					begin : sv2v_autoblock_3
 						reg signed [31:0] i;
 						for (i = 0; i < 3; i = i + 1)
-							in_huff_tree[(2 - i) * 32+:32] = initial_node[(2 - i) * 32+:32];
+							in_huff_tree[(2 - i) * 30+:30] = initial_node[(2 - i) * 30+:30];
 					end
 					state <= 3'b011;
 				end
 				3'b011: state <= 3'b100;
 				3'b100: begin
-					in_huff_tree[64+:32] = merged_node;
-					in_huff_tree[0+:64] = out_huff_tree[0+:64];
+					in_huff_tree[60+:30] = merged_node;
+					in_huff_tree[0+:60] = out_huff_tree[0+:60];
 					count = count - 1'b1;
 					even_idx = count << 1'b1;
 					odd_idx = even_idx + 1'b1;
-					huff_tree[even_idx][31-:9] = out_huff_tree[127-:9];
-					huff_tree[odd_idx][31-:9] = out_huff_tree[95-:9];
-					huff_tree[even_idx][22] = out_huff_tree[114];
-					huff_tree[odd_idx][22] = out_huff_tree[82];
-					huff_tree[even_idx][21-:9] = out_huff_tree[113-:9];
-					huff_tree[odd_idx][21-:9] = out_huff_tree[81-:9];
-					huff_tree[even_idx][12-:9] = out_huff_tree[104-:9];
-					huff_tree[odd_idx][12-:9] = out_huff_tree[72-:9];
-					huff_tree[1][31-:9] = out_huff_tree[127-:9];
-					huff_tree[1][22] = out_huff_tree[114];
-					huff_tree[1][21-:9] = out_huff_tree[113-:9];
-					huff_tree[1][12-:9] = out_huff_tree[104-:9];
+					huff_tree[even_idx][31-:9] = out_huff_tree[119-:9];
+					huff_tree[odd_idx][31-:9] = out_huff_tree[89-:9];
+					huff_tree[even_idx][22] = out_huff_tree[108];
+					huff_tree[odd_idx][22] = out_huff_tree[78];
+					huff_tree[even_idx][21-:9] = out_huff_tree[107-:9];
+					huff_tree[odd_idx][21-:9] = out_huff_tree[77-:9];
+					huff_tree[even_idx][12-:9] = out_huff_tree[98-:9];
+					huff_tree[odd_idx][12-:9] = out_huff_tree[68-:9];
+					huff_tree[1][31-:9] = out_huff_tree[119-:9];
+					huff_tree[1][22] = out_huff_tree[108];
+					huff_tree[1][21-:9] = out_huff_tree[107-:9];
+					huff_tree[1][12-:9] = out_huff_tree[98-:9];
 					if (!(count[0] | count[1]))
 						state <= 3'b101;
 					else
@@ -173,17 +173,17 @@ module freq_calc (
 	node
 );
 	input wire [23:0] data_in;
-	input wire [8:0] freq_in;
-	output reg [95:0] node;
+	input wire [5:0] freq_in;
+	output reg [89:0] node;
 	always @(*) begin : sv2v_autoblock_1
 		reg signed [31:0] i;
 		for (i = 0; i < 3; i = i + 1)
 			begin
-				node[((2 - i) * 32) + 31-:9] = data_in[(2 - i) * 8+:8];
-				node[((2 - i) * 32) + 22-:4] = freq_in[(2 - i) * 3+:3];
-				node[((2 - i) * 32) + 17-:9] = 'b0;
-				node[((2 - i) * 32) + 8-:9] = 'b0;
-				node[((2 - i) * 32) + 18] = 1'b1;
+				node[((2 - i) * 30) + 29-:9] = data_in[(2 - i) * 8+:8];
+				node[((2 - i) * 30) + 20-:2] = freq_in[(1 - i) * 3+:3];
+				node[((2 - i) * 30) + 17-:9] = 'b0;
+				node[((2 - i) * 30) + 8-:9] = 'b0;
+				node[((2 - i) * 30) + 18] = 1'b1;
 			end
 	end
 endmodule
@@ -193,9 +193,9 @@ module node_sorter (
 	output_node
 );
 	input wire clk;
-	input wire [95:0] input_node;
-	output reg [95:0] output_node;
-	reg [31:0] temp_node;
+	input wire [89:0] input_node;
+	output reg [89:0] output_node;
+	reg [29:0] temp_node;
 	always @(posedge clk) begin
 		begin : sv2v_autoblock_1
 			reg signed [31:0] i;
@@ -208,10 +208,10 @@ module node_sorter (
 				begin : sv2v_autoblock_3
 					reg signed [31:0] k;
 					for (k = 0; k < 2; k = k + 1)
-						if (((output_node[((2 - k) * 32) + 22-:4] == output_node[((2 - (k + 1)) * 32) + 22-:4]) && (output_node[((2 - k) * 32) + 31-:9] > output_node[((2 - (k + 1)) * 32) + 31-:9])) || (output_node[((2 - k) * 32) + 22-:4] > output_node[((2 - (k + 1)) * 32) + 22-:4])) begin
-							temp_node = output_node[(2 - k) * 32+:32];
-							output_node[(2 - k) * 32+:32] = output_node[(2 - (k + 1)) * 32+:32];
-							output_node[(2 - (k + 1)) * 32+:32] = temp_node;
+						if (((output_node[((2 - k) * 30) + 20-:2] == output_node[((2 - (k + 1)) * 30) + 20-:2]) && (output_node[((2 - k) * 30) + 29-:9] > output_node[((2 - (k + 1)) * 30) + 29-:9])) || (output_node[((2 - k) * 30) + 20-:2] > output_node[((2 - (k + 1)) * 30) + 20-:2])) begin
+							temp_node = output_node[(2 - k) * 30+:30];
+							output_node[(2 - k) * 30+:30] = output_node[(2 - (k + 1)) * 30+:30];
+							output_node[(2 - (k + 1)) * 30+:30] = temp_node;
 						end
 				end
 		end
@@ -222,12 +222,12 @@ module merge_nodes (
 	second_min_node,
 	merged_node
 );
-	input wire [31:0] min_node;
-	input wire [31:0] second_min_node;
-	output wire [31:0] merged_node;
-	assign merged_node[31-:9] = min_node[31-:9] + second_min_node[31-:9];
-	assign merged_node[22-:4] = min_node[22-:4] + second_min_node[22-:4];
-	assign merged_node[17-:9] = min_node[31-:9];
-	assign merged_node[8-:9] = second_min_node[31-:9];
+	input wire [29:0] min_node;
+	input wire [29:0] second_min_node;
+	output wire [29:0] merged_node;
+	assign merged_node[29-:9] = min_node[29-:9] + second_min_node[29-:9];
+	assign merged_node[20-:2] = min_node[20-:2] + second_min_node[20-:2];
+	assign merged_node[17-:9] = min_node[29-:9];
+	assign merged_node[8-:9] = second_min_node[29-:9];
 	assign merged_node[18] = 1'b0;
 endmodule
