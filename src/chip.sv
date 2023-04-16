@@ -7,7 +7,7 @@ module my_chip (
     input logic reset // Important: Reset is ACTIVE-HIGH
 );
 
-    huff_encoder DUT(.clk(clock), .reset(reset), .data_in(io_in[7:0]), .freq_in(io_in[11:8]), .encoded_value(io_out[2:0]), .encoded_mask(io_out[5:3]), .done(io_out[6]));  
+    huff_encoder DUT(.clk(clock), .reset(reset), .io_in(io_in), .io_out(io_out));  
     
     
     // Basic counter design as an example
