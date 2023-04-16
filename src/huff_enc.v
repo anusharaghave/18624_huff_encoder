@@ -22,7 +22,6 @@ module huff_encoder (
 	reg [8:0] encoded_value;
 	reg [8:0] encoded_mask;
 	reg done;
-	reg [23:0] character;
 	reg [2:0] encoded_value_h [0:5];
 	reg [2:0] a;
 	reg [2:0] b;
@@ -87,7 +86,7 @@ module huff_encoder (
 					data_in[(2 - c) * 8+:8] <= io_in[7:0];
 					freq_in[(2 - c) * 3+:3] <= io_in[10:8];
 					c <= (io_in[11] ? c + 1'b1 : 'b0);
-					state <= (c == 2 ? 3'b010 : 3'b001);
+					state <= (c == 'd2 ? 3'b010 : 3'b001);
 				end
 				3'b010: begin
 					count = 3;
@@ -163,7 +162,6 @@ module huff_encoder (
 									if (huff_tree[n][31-:9] == data_in[(2 - i) * 8+:8]) begin
 										encoded_mask[(2 - i) * 3+:3] = (1'b1 << huff_tree[n][1-:2]) - 1'b1;
 										encoded_value[(2 - i) * 3+:3] = encoded_value_h[n];
-										character[(2 - i) * 8+:8] = huff_tree[n][31-:9];
 									end
 							end
 					end
@@ -171,7 +169,7 @@ module huff_encoder (
 				end
 				3'b111: begin
 					done = 1'b1;
-					io_out[8:0] <= (b[0] == 1'b0 ? {done, character[(2 - a) * 8+:8]} : {done, 2'b00, encoded_mask[(2 - a) * 3+:3], encoded_value[(2 - a) * 3+:3]});
+					io_out[8:0] <= (b[0] == 1'b0 ? {done, 8'b00000000} : {done, 2'b00, encoded_mask[(2 - a) * 3+:3], encoded_value[(2 - a) * 3+:3]});
 					b <= b + 1'b1;
 					a <= (b[0] == 1'b1 ? a + 1 : a);
 					state <= (a == 3 ? 3'b001 : 3'b111);
