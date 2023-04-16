@@ -28,7 +28,7 @@ module huff_encoder (
 	reg [2:0] c;
 	reg [2:0] encoded_value_l;
 	reg [2:0] encoded_value_r;
-	reg is_n_odd;
+	wire is_n_odd;
 	freq_calc freq_calc_ins(
 		.data_in(data_in),
 		.freq_in(freq_in),
@@ -140,23 +140,16 @@ module huff_encoder (
 					state <= 3'b110;
 				end
 				3'b110: begin
+					encoded_value_h[2][0] = 1'b0;
+					encoded_value_h[3][0] = 1'b1;
+					encoded_value_l = encoded_value_h[huff_tree[4][3-:2]] << 1'b1;
+					encoded_value_r = (encoded_value_h[huff_tree[5][3-:2]] << 1'b1) | 1'b1;
+					encoded_value_h[4] = encoded_value_l;
+					encoded_value_h[5] = encoded_value_r;
 					begin : sv2v_autoblock_7
-						reg signed [31:0] n;
-						for (n = 2; n < 6; n = n + 1)
-							begin
-								encoded_value_l = encoded_value_h[huff_tree[n][3-:2]] << 1'b1;
-								encoded_value_r = (encoded_value_h[huff_tree[n][3-:2]] << 1'b1) | 1'b1;
-								is_n_odd = n[0];
-								if (huff_tree[n][3-:2] != 1'b1)
-									encoded_value_h[n] = (is_n_odd ? encoded_value_l : encoded_value_r);
-								else if (huff_tree[n][3-:2] == 1'b1)
-									encoded_value_h[n][0] = (is_n_odd ? 1'b0 : 1'b1);
-							end
-					end
-					begin : sv2v_autoblock_8
 						integer i;
 						for (i = 0; i <= 2; i = i + 1)
-							begin : sv2v_autoblock_9
+							begin : sv2v_autoblock_8
 								reg signed [31:0] n;
 								for (n = 1; n < 6; n = n + 1)
 									if (huff_tree[n][31-:9] == data_in[(2 - i) * 8+:8]) begin
@@ -169,10 +162,9 @@ module huff_encoder (
 				end
 				3'b111: begin
 					done = 1'b1;
-					io_out[8:0] <= (b[0] == 1'b0 ? {done, 8'b00000000} : {done, 2'b00, encoded_mask[(2 - a) * 3+:3], encoded_value[(2 - a) * 3+:3]});
+					io_out[8:0] <= {done, 2'b00, encoded_mask[(2 - b) * 3+:3], encoded_value[(2 - b) * 3+:3]};
 					b <= b + 1'b1;
-					a <= (b[0] == 1'b1 ? a + 1 : a);
-					state <= (a == 3 ? 3'b001 : 3'b111);
+					state <= (b[0] && b[1] ? 3'b001 : 3'b111);
 				end
 				default: state <= 3'b001;
 			endcase
