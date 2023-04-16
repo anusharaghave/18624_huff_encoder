@@ -52,7 +52,6 @@ module huff_encoder (
 				reg signed [31:0] i;
 				for (i = 0; i < 3; i = i + 1)
 					begin
-						encoded_value[(2 - i) * 3+:3] = 'b0;
 						encoded_mask[(2 - i) * 3+:3] = 'b0;
 						character[(2 - i) * 7+:7] = 'b0;
 						in_huff_tree[((2 - i) * 32) + 31-:9] = 'b0;
@@ -135,14 +134,15 @@ module huff_encoder (
 					state <= 4'b0111;
 				end
 				4'b0111: begin
-					encoded_value_h[2][0] = 1'b0;
-					encoded_value_h[3][0] = 1'b1;
-					for (n = 4; n < 6; n = n + 1)
+					for (n = 2; n < 6; n = n + 1)
 						begin
 							encoded_value_l = encoded_value_h[huff_tree[n][3-:2]] << 1'b1;
 							encoded_value_r = (encoded_value_h[huff_tree[n][3-:2]] << 1'b1) | 1'b1;
 							is_n_odd = n[0];
-							encoded_value_h[n] = (is_n_odd ? encoded_value_r : encoded_value_l);
+							if (huff_tree[n][3-:2] != 1'b1)
+								encoded_value_h[n] = (is_n_odd ? encoded_value_l : encoded_value_r);
+							else if (huff_tree[n][3-:2] == 1'b1)
+								encoded_value_h[n][0] = (is_n_odd ? 1'b0 : 1'b1);
 						end
 					state <= 4'b1000;
 				end
@@ -229,170 +229,4 @@ module merge_nodes (
 	assign merged_node[17-:9] = min_node[31-:9];
 	assign merged_node[8-:9] = second_min_node[31-:9];
 	assign merged_node[18] = 1'b0;
-endmodule
-module node_sorter_seq (
-	clk,
-	reset,
-	state,
-	input_node,
-	output_node,
-	sort_done
-);
-	input wire clk;
-	input wire reset;
-	input wire [3:0] state;
-	input wire [95:0] input_node;
-	output reg [95:0] output_node;
-	output reg sort_done;
-	reg [31:0] temp_node;
-	wire is_compare_done_f;
-	wire is_compare_done_a;
-	wire is_compare_done;
-	wire is_greater_a;
-	wire is_greater_f;
-	wire is_equal_a;
-	wire is_equal_f;
-	wire is_less_than_a;
-	wire is_less_than_f;
-	reg compare_start;
-	reg [3:0] freq_temp_A;
-	reg [3:0] freq_temp_B;
-	reg [8:0] ascii_temp_A;
-	reg [8:0] ascii_temp_B;
-	reg [8:0] A;
-	reg [8:0] B;
-	integer num_of_bits;
-	integer j;
-	integer k;
-	reg sort_state;
-	assign is_compare_done = is_compare_done_a && is_compare_done_f;
-	always @(posedge clk)
-		if (reset) begin
-			sort_done <= 1'b0;
-			output_node = input_node;
-			compare_start <= state == 4'b0011;
-			A <= 'b0;
-			B <= 'b0;
-			j = 0;
-			k = 0;
-			sort_state <= 1'b1;
-		end
-		else
-			case (sort_state)
-				1'b1:
-					if (compare_start) begin
-						freq_temp_A <= output_node[((2 - k) * 32) + 22-:4];
-						freq_temp_B <= output_node[((2 - (k + 1)) * 32) + 22-:4];
-						ascii_temp_A <= output_node[((2 - k) * 32) + 31-:9];
-						ascii_temp_B <= output_node[((2 - (k + 1)) * 32) + 31-:9];
-						A <= freq_temp_A;
-						B <= freq_temp_B;
-						if (is_compare_done_f && is_greater_f) begin
-							temp_node = output_node[(2 - k) * 32+:32];
-							output_node[(2 - k) * 32+:32] = output_node[(2 - (k + 1)) * 32+:32];
-							output_node[(2 - (k + 1)) * 32+:32] = temp_node;
-						end
-						else if (is_compare_done_f && is_equal_f) begin
-							A <= ascii_temp_A;
-							B <= ascii_temp_B;
-							if (is_compare_done_a && is_greater_a) begin
-								temp_node = output_node[(2 - k) * 32+:32];
-								output_node[(2 - k) * 32+:32] = output_node[(2 - (k + 1)) * 32+:32];
-								output_node[(2 - (k + 1)) * 32+:32] = temp_node;
-							end
-						end
-						sort_done <= (k == 2) && (j == 2);
-						if (is_compare_done_a && is_compare_done_f) begin
-							j = (k == 2 ? j + 1 : j);
-							k = (k == 2 ? 'b0 : k + 1);
-							sort_state <= 1'b1;
-						end
-						else if (sort_done)
-							sort_state <= 1'b0;
-					end
-				1'b0:
-					;
-			endcase
-	comparator1 freq_comp(
-		.A({freq_temp_A}),
-		.B({freq_temp_B}),
-		.is_equal(is_equal_f),
-		.is_greater(is_greater_f)
-	);
-	comparator1 ascii_comp(
-		.A(ascii_temp_A),
-		.B(ascii_temp_B),
-		.is_equal(is_equal_a),
-		.is_greater(is_greater_a)
-	);
-endmodule
-module comparator1 (
-	A,
-	B,
-	is_equal,
-	is_greater,
-	is_less_than
-);
-	input wire A;
-	input wire B;
-	output wire is_equal;
-	output wire is_greater;
-	output wire is_less_than;
-	assign is_equal = A == B;
-	assign is_greater = A > B;
-	assign is_less_than = A < B;
-endmodule
-module comparator (
-	clk,
-	reset,
-	compare_start,
-	num_of_bits,
-	A,
-	B,
-	is_compare_done,
-	is_equal,
-	is_greater
-);
-	input wire clk;
-	input wire reset;
-	input wire compare_start;
-	input integer num_of_bits;
-	input wire [8:0] A;
-	input wire [8:0] B;
-	output reg is_compare_done;
-	output reg is_equal;
-	output reg is_greater;
-	reg break1;
-	reg break2;
-	integer m;
-	always @(posedge clk)
-		if (reset) begin
-			break1 <= 1'b1;
-			break2 <= 1'b1;
-			is_compare_done <= 1'b0;
-			is_greater <= 'b0;
-			is_equal <= 'b0;
-			m <= 'b0;
-		end
-		else if (break1 && compare_start) begin
-			m <= num_of_bits - 1'b1;
-			is_compare_done <= 1'b0;
-			break2 <= 1'b0;
-			break1 <= break2;
-		end
-		else if (!is_compare_done) begin
-			if (A[m] > B[m]) begin
-				is_greater <= 1'b1;
-				is_compare_done <= 1'b1;
-			end
-			else if (A[m] < B[m])
-				is_compare_done <= 1'b1;
-			else if ((A[m] == B[m]) && (m != 'b0))
-				is_compare_done <= 1'b0;
-			else begin
-				is_equal <= 1'b1;
-				is_compare_done <= 1'b1;
-			end
-			m <= m - 1'b1;
-		end
 endmodule
