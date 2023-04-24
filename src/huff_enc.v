@@ -81,16 +81,20 @@ module huff_encoder (
 			end
 			encoded_value_l = 'b0;
 			encoded_value_r = 'b0;
-			io_out <= 'b0;
 		end
 		else
 			case (state)
 				3'b001: begin
 					done = 'b0;
-					data_in[(2 - c) * 8+:8] <= io_in[7:0];
-					freq_in[(2 - c) * 3+:3] <= io_in[10:8];
-					c <= c + 1'b1;
-					state <= (c > 3 ? 3'b010 : 3'b001);
+					io_out <= 'b0;
+					a <= 'b0;
+					b <= 'b0;
+					if (io_in[11] == 1'b1) begin
+						data_in[(2 - c) * 8+:8] <= io_in[7:0];
+						freq_in[(2 - c) * 3+:3] <= io_in[10:8];
+						c <= c + 1'b1;
+					end
+					state <= (c == 3 ? 3'b010 : 3'b001);
 				end
 				3'b010: begin
 					count = 3;
@@ -173,11 +177,12 @@ module huff_encoder (
 					state <= 3'b111;
 				end
 				3'b111: begin
+					c <= 'b0;
 					done = 1'b1;
 					io_out[8:0] <= (b[0] == 1'b0 ? {done, 3'b011, character[(2 - a) * 5+:5]} : {done, 2'b00, encoded_mask[(2 - a) * 3+:3], encoded_value[(2 - a) * 3+:3]});
 					b <= b + 1'b1;
 					a <= (b[0] == 1'b1 ? a + 1 : a);
-					state <= (a > 3 ? 3'b001 : 3'b111);
+					state <= (a > 2 ? 3'b001 : 3'b111);
 				end
 				default: state <= 3'b001;
 			endcase
