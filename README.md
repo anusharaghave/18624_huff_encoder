@@ -40,6 +40,8 @@ io[7:0] - ascii_value of character (only character 'a' to 'o')
 io[10:8] - frequency of each of character (only 2 bits, hence range [1:3])
 io[11] - data enable signal
 
+![](input_vector.jpg)
+![](expected_out.jpg)
 
 ## Design Testing / Bringup
 
@@ -63,6 +65,9 @@ Or
 	./run_script.sh 
 Or using VCS:
 	vcs -sverilog -R -top tb_top -debug_access+all huff_enc.sv huff_enc_tb.sv
+
+![](passing_output.jpg)
+
 
 ***Testing:***
 1. Set io_in[11:0] = {1'b1, freq_in, data_in}
