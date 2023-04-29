@@ -3,22 +3,18 @@
 
 
 //Algorithm
-//1. Read the character array, calculate the frequency of each node(leaf node/character)
-//2. First sort the input node list, find 1st and 2nd minimum. If tied, sort according to the ascii value
-//3. Allocate them to huff_tree, assign only is_leaf_node, child nodes (not parent node)
-//4. Merge nodes--> create internal node- sort and then add to huff tree -repeat until only 1 node is left
-//5. Iterate until the root node 
-//6. Start from i=count-1, left_node=2i, right_node=2i+1 (i decrementing from count-1 to 0), where count is the number of unique character count
-//7. Traverse the entire array to assign the parent node and level in the binary tree
-//8. Traverse again to assign the encodings to each character
+// Read the characters(leaf node) and their corresponding frequencies array
+// First sort the input node list, find 1st and 2nd minimum. If tied, sort according to the ascii value
+// Allocate them to huff_tree, assign only is_leaf_node, child nodes (not parent node)
+// Merge nodes--> create internal node- sort and then add to huff tree -repeat until only 1 node is left
+// Iterate until the root node
+// Start from i=count-1, left_node=2i, right_node=2i+1 (i decrementing from count-1 to 0), where count is the number of unique character count
+// Traverse the entire array to assign the parent node and level in the binary tree
+// Traverse again to assign the encodings to each character
 
 
 //Optimizations
-//1. remove frequency calculator module- frequency in should be within 7 (3 bits)
-//2. sorting logic- use some fields of nodes (don't pass entire node list)   , also can only find min and second min 
-//3. limit the characters that can be encoded - no much help
-//4. Use huff tree[0] as root node- accordingly change the indexing
-//5. Use only minimal subset of characters - like from a ('h61) to 0 ('h6F)- This is working, but you have to give hex inputs
+//1. Use only minimal subset of characters - like from a ('h61) to 0 ('h6F)
 
 
 `timescale 1us/1ps
@@ -27,9 +23,8 @@
 `define BIT_WIDTH 2
 
 
-
 `define DATA_COLLECT 3'b001
-`define FREQ_CALC 3'b010
+`define NODE_CREATE 3'b010
 `define SORT 3'b011
 `define MERGE_BUILD 3'b100
 `define ENCODE 3'b101  
@@ -82,7 +77,7 @@ logic [`MAX_CHAR_COUNT-1:0] encoded_value_r;
 logic is_n_odd;
 
 
-    freq_calc freq_calc_ins(.data_in(data_in), .freq_in(freq_in), .node(initial_node));
+    node_create node_create_ins(.data_in(data_in), .freq_in(freq_in), .node(initial_node));
     node_sorter node_sorter_ins(.clk(clk), .input_node(in_huff_tree[0:`MAX_CHAR_COUNT-1]), .output_node(out_huff_tree[0:`MAX_CHAR_COUNT-1]));
     merge_nodes merge_nodes_ins(.min_node(out_huff_tree[0]), .second_min_node(out_huff_tree[1]), .merged_node(merged_node));
 
@@ -134,10 +129,10 @@ always_ff @(posedge clk) begin : huffman_enc
                 freq_in[c] <= io_in[10:8];
                 c <= c + 1'b1;
             end
-                state <= (c == `MAX_CHAR_COUNT)? `FREQ_CALC : `DATA_COLLECT;
+                state <= (c == `MAX_CHAR_COUNT)? `NODE_CREATE : `DATA_COLLECT;
         end
 
-        `FREQ_CALC: begin
+        `NODE_CREATE: begin
             count = `MAX_CHAR_COUNT;
             for (int i=0; i< `MAX_CHAR_COUNT; i++) begin
             in_huff_tree[i] = initial_node[i];
@@ -251,7 +246,7 @@ end //posedge_clk
 endmodule
 
 
-module freq_calc(input logic [0:`MAX_CHAR_COUNT-1][7:0] data_in, input logic [0:`MAX_CHAR_COUNT-1][2:0] freq_in, output node_t node[`MAX_CHAR_COUNT]);
+module node_create(input logic [0:`MAX_CHAR_COUNT-1][7:0] data_in, input logic [0:`MAX_CHAR_COUNT-1][2:0] freq_in, output node_t node[`MAX_CHAR_COUNT]);
 
 always_comb begin
         for (int i=0; i< `MAX_CHAR_COUNT; i++) begin
@@ -292,12 +287,10 @@ endmodule
 
 
 module merge_nodes(input node_t min_node, input node_t second_min_node, output node_t merged_node);
-//always_comb begin
     assign merged_node.ascii_char =  min_node.ascii_char + second_min_node.ascii_char;    
     assign merged_node.frequency = min_node.frequency + second_min_node.frequency;
     assign merged_node.left_node = min_node.ascii_char;
     assign merged_node.right_node = second_min_node.ascii_char;
-    assign merged_node.is_leaf_node = 1'b0; 
-//end   
+    assign merged_node.is_leaf_node = 1'b0;   
 endmodule
 
