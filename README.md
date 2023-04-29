@@ -45,7 +45,9 @@ io[11] - data enable signal
 
 ## Design Testing / Bringup
 
-(explain how to test your design; if relevant, give examples of inputs and expected outputs)
+
+![](input_output.jpg)
+
 
 **Verification:** 
 In the project repo, huff_enc_tb.sv is the system verilog testbench which parses the inputs (characters and frequency) from “input_vector.txt” and generates output encodings along with the mask value in a serial fashion, which are then compared with the values (expected_out.txt) generated from golden model (huff_test.py). Assertions are added in this testbench to compare against the golden model outputs.
@@ -69,7 +71,7 @@ Or using VCS:
 ![](passing_output.jpg)
 
 
-***Testing:***
+**##Testing**
 1. Set io_in[11:0] = {1'b1, freq_in, data_in}
 where, freq_in = frequency of character, data_in- ascii value of that character
 Send this input for three cycles (as only maximum 3 characters) can be encoded with this module 
@@ -78,13 +80,8 @@ Send this input for three cycles (as only maximum 3 characters) can be encoded w
 4. Once this vector testing is done, repeat the same procedure for next set of vectors
 
 
-
-(if you would like your design to be tested after integration but before tapeout, provide a Python script that uses the Debug Interface posted on canvas and explain here how to run the testing script)
-
-## Media
-
-(optionally include any photos or videos of your design in action)
-
-## (anything else)
-
-If there is anything else you would like to document about your project such as background information, design space exploration, future ideas, verification details, references, etc etc. please add it here. This template is meant to be a guideline, not an exact format that you're required to follow.
+**##Enhancements**
+1. Expand the input range to all characters
+2. Instead of feeding in characters and frequencies, design the module to take input string, calculate the frequency of each unique character and encode it
+3. Increase the MAX_CHAR_COUNT from 3 to a larger number (as of now, only 3 characters are encoded with this module)
+4. If less than 3 chars are fed, it gives erroneous outputs 
