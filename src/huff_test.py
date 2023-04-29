@@ -1,5 +1,5 @@
 #Reference: 
-#source : Internet(some piece of code)
+#source : Geeks for geek/Internet(some piece of code)
 # A Huffman Encoder - GOLDEN MODEL
 import heapq
 
