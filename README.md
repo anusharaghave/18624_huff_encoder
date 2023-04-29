@@ -36,16 +36,43 @@ To add images, upload them into the repo and use the following format to embed t
 ## Inputs/Outputs
 
 (describe what each of the 12 input and 12 output pins are used for; )
+io[7:0] - ascii_value of character (only character 'a' to 'o')
+io[10:8] - frequency of each of character (only 2 bits, hence range [1:3])
+io[11] - data enable signal
 
-(if you have any specific dependency on clock frequency; i.e. for visual effects or for an external interface, explain it here.)
-
-## Hardware Peripherals
-
-(if you have any external hardware peripherals such as buttons, LEDs, sensors, etc, please explain them here. otherwise, remove this section)
 
 ## Design Testing / Bringup
 
 (explain how to test your design; if relevant, give examples of inputs and expected outputs)
+
+**Verification:** 
+In the project repo, huff_enc_tb.sv is the system verilog testbench which parses the inputs (characters and frequency) from “input_vector.txt” and generates output encodings along with the mask value in a serial fashion, which are then compared with the values (expected_out.txt) generated from golden model (huff_test.py). Assertions are added in this testbench to compare against the golden model outputs.
+Python model huff_test.py sparse the same input file (input_vector.txt) and output the encodings to “expected_out.txt”, which are later used by system Verilog testbench to compare against its generated output.
+**Input characters are to be between character ‘a’ and ‘o’, with corresponding frequencies within the range of 3 (only 2 bits) due to gate count constraints.
+
+Steps for using iverilog (or) simply run ./run_script.sh
+	source /afs/club.cc.cmu.edu/projects/stuco-open-eda/bashrc
+	Add more vectors in the input_vector.txt (characters, frequencies), update the vector number in the huff_enc_tb.sv 
+`define VECTOR_NUM 5 //change as per the vectors in input_vector.txt
+	sv2v huff_enc.sv > huff_enc.v
+	sv2v huff_enc_tb.sv > huff_enc_tb.v
+	python3 huff_test.py
+	iverilog -o sim huff_enc_tb.v huff_enc.v
+	. /sim
+Or 
+	./run_script.sh 
+Or using VCS:
+	vcs -sverilog -R -top tb_top -debug_access+all huff_enc.sv huff_enc_tb.sv
+
+***Testing:***
+1. Set io_in[11:0] = {1'b1, freq_in, data_in}
+where, freq_in = frequency of character, data_in- ascii value of that character
+Send this input for three cycles (as only maximum 3 characters) can be encoded with this module 
+2. Deassert data enable signal (io_in[11]) after 3 clock cycles to indicate that three characters are fed to the module.
+3. As soon as io_out[8] is asserted, start reading the values which represents ascii_value in the first cycle and {encoded_mask, encoded_value} in the consecutive cycle. This repeats until all three encodings are recieved. 
+4. Once this vector testing is done, repeat the same procedure for next set of vectors
+
+
 
 (if you would like your design to be tested after integration but before tapeout, provide a Python script that uses the Debug Interface posted on canvas and explain here how to run the testing script)
 
