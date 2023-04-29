@@ -29,13 +29,11 @@ Anusha Raghavendra
 10.	Final state is SEND_OUTPUT, where it just extracts the encodings and mask value for those input characters in the order of character input and serially sends it out with out_valid signal in io_out[8] bit.
 
 
-To add images, upload them into the repo and use the following format to embed them in markdown:
 
 ![](image1.png)
 
 ## Inputs/Outputs
 
-(describe what each of the 12 input and 12 output pins are used for; )
 io[7:0] - ascii_value of character (only character 'a' to 'o')
 io[10:8] - frequency of each of character (only 2 bits, hence range [1:3])
 io[11] - data enable signal
